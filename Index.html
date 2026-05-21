@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Manager</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f7f7f5;--bg3:#efefec;
+  --text:#1a1a1a;--text2:#6b6b6b;--text3:#ababab;
+  --border:rgba(0,0,0,0.10);--border2:rgba(0,0,0,0.18);
+  --accent:#378ADD;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'SF Mono','Fira Code',monospace;--rad:6px;--radlg:10px;
+  --col-w:140px;--name-w:200px;--row-w:38px;--icon-w:62px;--add-w:38px;
+}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--bg2:#252527;--bg3:#2e2e30;--text:#f0f0f0;--text2:#999;--text3:#555;--border:rgba(255,255,255,0.10);--border2:rgba(255,255,255,0.18);}}
+html,body{height:100%;font-family:var(--font);font-size:13px;color:var(--text);background:var(--bg3);}
+#shell{display:flex;height:100vh;overflow:hidden;background:var(--bg);}
+
+/* SIDEBAR */
+#sidebar{width:220px;min-width:220px;border-right:0.5px solid var(--border2);display:flex;flex-direction:column;background:var(--bg2);}
+#sb-header{padding:12px 12px 10px;border-bottom:0.5px solid var(--border);}
+#sb-project-name{font-size:13px;font-weight:600;color:var(--text);outline:none;border:none;background:transparent;width:100%;font-family:var(--font);}
+#sb-project-name:empty::before{content:attr(data-placeholder);color:var(--text3);font-weight:400;}
+#sb-project-name:focus{outline:2px solid var(--accent);outline-offset:1px;border-radius:3px;}
+#sb-body{flex:1;overflow-y:auto;padding:6px 0;}
+#sb-body::-webkit-scrollbar{width:4px;}
+#sb-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.sb-section-wrap{position:relative;}
+.sb-section-label-row{display:flex;align-items:center;gap:4px;padding:10px 10px 3px 13px;}
+.sb-section-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;outline:none;border:none;background:transparent;font-family:var(--font);flex:1;}
+.sb-section-label:empty::before{content:attr(data-placeholder);opacity:.5;}
+.sb-section-label:focus{outline:1px dashed var(--accent);border-radius:2px;}
+.sb-section-add{display:none;width:18px;height:18px;border-radius:3px;border:none;background:none;cursor:pointer;color:var(--text3);font-size:13px;align-items:center;justify-content:center;}
+.sb-section-add:hover{background:var(--bg3);color:var(--text2);}
+.sb-section-wrap:hover .sb-section-add{display:flex;}
+.sb-item{display:flex;align-items:center;gap:7px;padding:5px 13px;cursor:pointer;font-size:12px;color:var(--text2);transition:background .1s,color .1s;user-select:none;position:relative;}
+.sb-item:hover{background:var(--bg3);color:var(--text);}
+.sb-item.active{background:var(--bg);color:var(--text);font-weight:500;border-right:2px solid var(--accent);}
+.sb-item i{font-size:14px;flex-shrink:0;}
+.sb-item-label{flex:1;outline:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-item-label:focus{outline:1px dashed var(--accent);border-radius:2px;white-space:normal;}
+.sb-badge{font-size:10px;background:var(--bg3);color:var(--text3);padding:1px 6px;border-radius:10px;border:.5px solid var(--border);flex-shrink:0;}
+.sb-item.active .sb-badge{background:#E6F1FB;color:#185FA5;border-color:#B5D4F4;}
+.sb-item-del{display:none;width:16px;height:16px;border-radius:3px;border:none;background:none;cursor:pointer;color:var(--text3);font-size:12px;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-item:hover .sb-item-del{display:flex;}
+.sb-item-del:hover{color:#E24B4A;background:#FCEBEB;}
+.sb-indent{padding-left:30px;}
+#sb-footer{padding:8px 10px;border-top:.5px solid var(--border);display:flex;flex-direction:column;gap:6px;}
+.sb-add-btn{width:100%;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);background:none;border:.5px solid var(--border2);border-radius:var(--rad);padding:5px 10px;cursor:pointer;transition:all .12s;font-family:var(--font);}
+.sb-add-btn:hover{background:var(--bg);color:var(--text);}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+#main-toolbar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:.5px solid var(--border2);background:var(--bg);flex-shrink:0;flex-wrap:wrap;}
+#sheet-title{font-size:13px;font-weight:500;flex:1;min-width:80px;outline:none;border:none;background:transparent;font-family:var(--font);color:var(--text);}
+#sheet-title:empty::before{content:'Sheet title';color:var(--text3);}
+#sheet-title:focus{outline:2px solid var(--accent);outline-offset:1px;border-radius:3px;}
+.tb-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);padding:4px 9px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg);cursor:pointer;transition:all .12s;white-space:nowrap;font-family:var(--font);}
+.tb-btn:hover{background:var(--bg2);color:var(--text);}
+.tb-btn i{font-size:13px;}
+.tb-btn.primary{background:var(--text);color:var(--bg);border-color:var(--text);}
+.tb-btn.primary:hover{opacity:.85;}
+
+/* SCROLL CONTAINER — header + body share one scrollable axis */
+#scroll-outer{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+#scroll-inner{flex:1;overflow:auto;position:relative;}
+#scroll-inner::-webkit-scrollbar{width:6px;height:6px;}
+#scroll-inner::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+/* STICKY HEADER TABLE */
+#grid{width:max-content;min-width:100%;border-collapse:collapse;table-layout:fixed;}
+#grid thead{position:sticky;top:0;z-index:20;}
+#grid thead tr{background:var(--bg2);}
+#grid th{
+  height:32px;padding:0 10px;border-right:.5px solid var(--border);border-bottom:.5px solid var(--border2);
+  font-size:11px;font-weight:500;color:var(--text2);text-align:left;white-space:nowrap;
+  vertical-align:middle;position:relative;
+}
+#grid th.th-row{width:var(--row-w);min-width:var(--row-w);text-align:center;padding:0 4px;}
+#grid th.th-icons{width:var(--icon-w);min-width:var(--icon-w);text-align:center;padding:0 6px;}
+#grid th.th-icons i{font-size:12px;vertical-align:middle;}
+#grid th.th-icons i+i{margin-left:4px;}
+#grid th.th-name{width:var(--name-w);min-width:var(--name-w);}
+#grid th.th-data{width:var(--col-w);min-width:120px;}
+#grid th.th-add{width:var(--add-w);min-width:var(--add-w);text-align:center;cursor:pointer;border-right:none;}
+#grid th.th-add:hover{background:var(--bg3);color:var(--accent);}
+.th-label{outline:none;border:none;background:transparent;font-size:11px;font-weight:500;color:var(--text2);font-family:var(--font);cursor:text;white-space:nowrap;display:inline;}
+.th-label:hover{color:var(--text);}
+.th-label:focus{color:var(--text);outline:none;}
+th:focus-within{background:var(--bg3);}
+.th-icon{font-size:12px;margin-right:3px;vertical-align:middle;}
+.th-badge{font-size:9px;padding:1px 4px;border-radius:3px;background:var(--bg3);color:var(--text3);border:.5px solid var(--border);margin-left:3px;vertical-align:middle;}
+.th-del{display:none;position:absolute;top:50%;right:4px;transform:translateY(-50%);width:14px;height:14px;border-radius:3px;border:none;background:none;cursor:pointer;color:var(--text3);font-size:10px;align-items:center;justify-content:center;line-height:1;}
+th.th-data:hover .th-del{display:flex;}
+.th-del:hover{color:#E24B4A;background:#FCEBEB;}
+
+/* GRID BODY */
+#grid td{border-bottom:.5px solid var(--border);border-right:.5px solid var(--border);padding:0;vertical-align:middle;}
+#grid tbody tr:hover td{background:var(--bg2);}
+#grid tr.section-row td{background:#e8e6e0;font-weight:600;font-size:12px;color:#3a3830;}
+#grid tr.section-row:hover td{background:#dedad2;}
+@media(prefers-color-scheme:dark){
+  #grid tr.section-row td{background:#2a2a2c;color:#c8c8c8;}
+  #grid tr.section-row:hover td{background:#333335;}
+}
+.td-row{width:var(--row-w);padding:3px 4px;text-align:center;color:var(--text3);font-size:11px;}
+.td-icons{width:var(--icon-w);padding:4px 6px;text-align:center;white-space:nowrap;}
+.td-name{width:var(--name-w);padding:5px 8px 5px 18px;font-size:12px;color:var(--text);outline:none;}
+.td-cell{width:var(--col-w);padding:5px 8px;font-size:12px;color:var(--text);outline:none;}
+.td-add-spacer{width:var(--add-w);}
+[contenteditable]:focus{outline:2px solid var(--accent);outline-offset:-2px;border-radius:3px;background:var(--bg);}
+
+/* ADD ROW */
+#add-row-btn{width:100%;padding:7px;font-size:11px;color:var(--text3);background:none;border:none;border-top:.5px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:flex-start;gap:5px;padding-left:calc(var(--row-w) + var(--icon-w) + 18px);transition:all .12s;font-family:var(--font);}
+#add-row-btn:hover{background:var(--bg2);color:var(--text2);}
+
+/* STATUS */
+.status-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;cursor:pointer;}
+.status-chip::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.7;flex-shrink:0;}
+.st-plan{background:#E6F1FB;color:#185FA5;}.st-prog{background:#FAEEDA;color:#854F0B;}
+.st-done{background:#EAF3DE;color:#3B6D11;}.st-blk{background:#FCEBEB;color:#A32D2D;}.st-rev{background:#EEEDFE;color:#534AB7;}
+
+/* PEOPLE */
+.people-cell{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:3px 6px;cursor:pointer;min-height:30px;}
+.person-tag{display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:.5px solid var(--border2);border-radius:20px;padding:2px 6px 2px 3px;font-size:11px;color:var(--text);flex-shrink:0;}
+.person-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;flex-shrink:0;color:#fff;}
+.person-tag-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:10px;padding:0;display:flex;align-items:center;}
+.person-tag-del:hover{color:#E24B4A;}
+.people-add-btn{font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:2px;padding:2px 4px;border-radius:4px;font-family:var(--font);}
+.people-add-btn:hover{background:var(--bg3);color:var(--text2);}
+
+/* ICON BTNS */
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;cursor:pointer;color:var(--text3);background:none;border:none;transition:all .1s;position:relative;vertical-align:middle;font-family:var(--font);}
+.icon-btn:hover{color:var(--text);background:var(--bg3);}
+.icon-btn i{font-size:14px;pointer-events:none;}
+.icon-btn .badge{position:absolute;top:-2px;right:-3px;width:13px;height:13px;border-radius:50%;font-size:8px;font-weight:600;display:flex;align-items:center;justify-content:center;background:#E24B4A;color:#fff;border:1.5px solid var(--bg);pointer-events:none;}
+
+/* EXPAND BTN */
+.expand-btn{background:none;border:none;cursor:pointer;color:var(--text2);padding:5px 8px 5px 10px;font-size:12px;font-weight:600;font-family:var(--font);display:flex;align-items:center;gap:5px;width:100%;}
+.expand-btn:hover{color:var(--text);}
+.expand-btn i{font-size:12px;flex-shrink:0;color:var(--text3);}
+.section-label-edit{outline:none;background:transparent;border:none;font-family:var(--font);font-size:12px;font-weight:600;color:inherit;flex:1;}
+.section-label-edit:focus{outline:1px dashed var(--accent);border-radius:2px;}
+
+/* DROPDOWN */
+.cell-dropdown{position:absolute;z-index:300;background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radlg);min-width:160px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.12);}
+.cell-dropdown.hidden{display:none;}
+.dropdown-item{padding:6px 12px;font-size:12px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px;}
+.dropdown-item:hover{background:var(--bg2);}
+.dropdown-sep{height:.5px;background:var(--border);margin:3px 0;}
+
+/* SIDE PANEL */
+.panel-overlay{display:none;position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.20);}
+.panel-overlay.open{display:block;}
+.side-panel{position:absolute;top:0;right:0;bottom:0;width:320px;background:var(--bg);border-left:.5px solid var(--border2);display:flex;flex-direction:column;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:.5px solid var(--border2);flex-shrink:0;}
+.panel-header h3{font-size:13px;font-weight:500;flex:1;padding-right:8px;word-break:break-word;}
+.panel-tabs{display:flex;gap:2px;padding:6px 12px;border-bottom:.5px solid var(--border);flex-shrink:0;}
+.panel-tab{font-size:11px;padding:4px 10px;border-radius:var(--rad);border:.5px solid transparent;background:none;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all .1s;display:inline-flex;align-items:center;gap:4px;}
+.panel-tab:hover{background:var(--bg2);color:var(--text);}
+.panel-tab.active{background:var(--bg2);color:var(--text);border-color:var(--border2);font-weight:500;}
+.panel-tab i{font-size:12px;}
+.panel-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px;}
+.panel-body::-webkit-scrollbar{width:4px;}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.panel-section h4{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.comment-item{display:flex;gap:8px;margin-bottom:10px;}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;}
+.av-b{background:#E6F1FB;color:#185FA5;}.av-t{background:#E1F5EE;color:#0F6E56;}.av-p{background:#EEEDFE;color:#534AB7;}.av-c{background:#FAECE7;color:#993C1D;}
+.comment-text{font-size:12px;color:var(--text);line-height:1.5;}
+.comment-meta{font-size:10px;color:var(--text3);margin-top:2px;}
+.attach-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border:.5px solid var(--border2);border-radius:var(--rad);cursor:pointer;transition:all .1s;margin-bottom:5px;}
+.attach-item:hover{background:var(--bg2);}
+.attach-item i{font-size:16px;color:var(--text2);flex-shrink:0;}
+.attach-name{font-size:12px;color:var(--text);flex:1;word-break:break-all;}
+.attach-size{font-size:10px;color:var(--text3);flex-shrink:0;}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;border-bottom:.5px solid var(--border);}
+.detail-row:last-child{border-bottom:none;}
+.detail-label{color:var(--text2);}
+.comment-input-wrap{padding:8px 12px;border-top:.5px solid var(--border2);display:flex;gap:6px;align-items:center;flex-shrink:0;background:var(--bg);}
+.comment-input{flex:1;font-size:12px;padding:6px 9px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg2);color:var(--text);outline:none;font-family:var(--font);}
+.comment-input:focus{border-color:var(--accent);background:var(--bg);}
+.send-btn{width:28px;height:28px;border-radius:var(--rad);border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.send-btn:hover{opacity:.85;}
+.send-btn i{font-size:14px;}
+
+/* MODALS */
+.modal-wrap{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.28);align-items:center;justify-content:center;}
+.modal-wrap.open{display:flex;}
+.modal{background:var(--bg);border-radius:var(--radlg);border:.5px solid var(--border2);padding:22px;width:400px;max-width:96vw;display:flex;flex-direction:column;gap:14px;max-height:90vh;overflow-y:auto;}
+.modal h3{font-size:14px;font-weight:500;}
+.modal label{font-size:11px;color:var(--text2);display:block;margin-bottom:3px;}
+.modal input,.modal select,.modal textarea{width:100%;font-size:12px;padding:7px 9px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg2);color:var(--text);outline:none;font-family:var(--font);}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--accent);background:var(--bg);}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:2px;}
+.col-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.col-type-opt{border:.5px solid var(--border2);border-radius:var(--rad);padding:8px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);transition:all .12s;background:var(--bg2);}
+.col-type-opt:hover{border-color:var(--accent);color:var(--text);background:var(--bg);}
+.col-type-opt.selected{border-color:var(--accent);background:#E6F1FB;color:#185FA5;}
+.col-type-opt i{font-size:15px;}
+
+/* PEOPLE MODAL */
+.people-modal-inner{background:var(--bg);border-radius:var(--radlg);border:.5px solid var(--border2);width:340px;max-width:96vw;display:flex;flex-direction:column;overflow:hidden;max-height:90vh;}
+.people-modal-header{padding:14px 16px 10px;border-bottom:.5px solid var(--border);}
+.people-modal-header h3{font-size:13px;font-weight:500;margin-bottom:8px;}
+.people-search{width:100%;font-size:12px;padding:6px 9px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg2);color:var(--text);outline:none;font-family:var(--font);}
+.people-search:focus{border-color:var(--accent);background:var(--bg);}
+.people-list{overflow-y:auto;max-height:200px;padding:4px 0;}
+.people-list::-webkit-scrollbar{width:4px;}
+.people-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.person-row{display:flex;align-items:center;gap:9px;padding:7px 16px;cursor:pointer;transition:background .1s;}
+.person-row:hover{background:var(--bg2);}
+.person-row.selected{background:#E6F1FB;}
+.person-name{font-size:12px;color:var(--text);flex:1;}
+.person-email{font-size:10px;color:var(--text3);}
+.person-check{font-size:13px;color:var(--accent);}
+.people-modal-footer{padding:10px 16px;border-top:.5px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.add-person-row{display:flex;gap:6px;}
+.add-person-row input{flex:1;font-size:12px;padding:5px 8px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg2);color:var(--text);outline:none;font-family:var(--font);}
+.add-person-row input:focus{border-color:var(--accent);background:var(--bg);}
+.notif-row{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rad);padding:8px 10px;font-size:11px;color:var(--text2);display:flex;flex-direction:column;gap:6px;}
+.notif-row strong{color:var(--text);font-weight:500;}
+.notif-checkbox-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);}
+.notif-checkbox-row input[type=checkbox]{accent-color:var(--accent);}
+.notif-email-input{width:100%;font-size:11px;padding:4px 7px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--text);outline:none;font-family:var(--font);}
+.notif-email-input:focus{border-color:var(--accent);}
+.notif-sent{font-size:11px;color:#3B6D11;background:#EAF3DE;border:.5px solid #97C459;border-radius:var(--rad);padding:5px 9px;display:none;align-items:center;gap:5px;}
+
+/* IMPORT */
+.import-drop{border:2px dashed var(--border2);border-radius:var(--radlg);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s;color:var(--text2);font-size:13px;background:var(--bg2);}
+.import-drop.drag-over{border-color:var(--accent);background:#E6F1FB22;color:var(--accent);}
+.import-drop i{font-size:28px;display:block;margin-bottom:8px;color:var(--text3);}
+.import-drop.drag-over i{color:var(--accent);}
+.import-steps{display:none;flex-direction:column;gap:6px;}
+.import-step{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:7px;}
+.import-step i{font-size:13px;}
+.import-step.done{color:#3B6D11;}
+.import-step.done i{color:#639922;}
+.prog-wrap{background:var(--bg3);border-radius:10px;height:4px;overflow:hidden;margin-top:4px;}
+.prog-fill{height:100%;background:var(--accent);border-radius:10px;transition:width .3s;}
+.import-mapping{display:none;flex-direction:column;gap:10px;}
+.mapping-row{display:flex;align-items:center;gap:8px;font-size:12px;}
+.mapping-row .src{flex:1;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mapping-arrow{color:var(--text3);flex-shrink:0;}
+.mapping-row select{flex:1;font-size:11px;padding:4px 6px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg2);color:var(--text);font-family:var(--font);outline:none;}
+.mapping-row select:focus{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div id="shell">
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div id="sb-header">
+    <div id="sb-project-name" contenteditable="true" spellcheck="false"
+         data-placeholder="Project name…" role="textbox" aria-label="Project name"></div>
+  </div>
+  <div id="sb-body"></div>
+  <div id="sb-footer">
+    <button class="sb-add-btn" onclick="addSidebarSection()"><i class="ti ti-folder-plus"></i> New section</button>
+    <button class="sb-add-btn" onclick="openNewSheet()"><i class="ti ti-table-plus"></i> New sheet</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="main-toolbar">
+    <div id="sheet-title" contenteditable="true" spellcheck="false" aria-label="Sheet title" role="textbox"></div>
+    <button class="tb-btn" onclick="openImportModal()"><i class="ti ti-upload"></i> Import</button>
+    <button class="tb-btn"><i class="ti ti-filter"></i> Filter</button>
+    <button class="tb-btn"><i class="ti ti-download"></i> Export</button>
+    <button class="tb-btn primary" onclick="addRow()"><i class="ti ti-plus"></i> Add row</button>
+  </div>
+
+  <div id="scroll-outer">
+    <div id="scroll-inner">
+      <table id="grid">
+        <thead><tr id="col-header-row"></tr></thead>
+        <tbody id="grid-body"></tbody>
+      </table>
+      <button id="add-row-btn" onclick="addRow()"><i class="ti ti-plus"></i> Add row</button>
+
+      <!-- SIDE PANEL -->
+      <div class="panel-overlay" id="panel-overlay" onclick="closePanelBg(event)">
+        <div class="side-panel" onclick="event.stopPropagation()">
+          <div class="panel-header">
+            <h3 id="panel-title"></h3>
+            <button class="icon-btn" onclick="closePanel()" aria-label="Close"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="panel-tabs">
+            <button class="panel-tab active" id="tab-attach" onclick="switchTab('attach')"><i class="ti ti-paperclip"></i> Attachments</button>
+            <button class="panel-tab" id="tab-comment" onclick="switchTab('comment')"><i class="ti ti-message-circle-2"></i> Comments</button>
+            <button class="panel-tab" id="tab-detail" onclick="switchTab('detail')"><i class="ti ti-info-circle"></i> Details</button>
+          </div>
+          <div class="panel-body" id="panel-body"></div>
+          <div class="comment-input-wrap" id="comment-input-wrap" style="display:none">
+            <input class="comment-input" id="new-comment" placeholder="Add a comment…" onkeydown="if(event.key==='Enter')submitComment()">
+            <button class="send-btn" onclick="submitComment()"><i class="ti ti-send"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- STATUS DROPDOWN -->
+<div class="cell-dropdown hidden" id="status-dropdown" style="position:fixed">
+  <div class="dropdown-item" onclick="pickStatus('Planning')"><span class="status-chip st-plan">Planning</span></div>
+  <div class="dropdown-item" onclick="pickStatus('In Progress')"><span class="status-chip st-prog">In Progress</span></div>
+  <div class="dropdown-item" onclick="pickStatus('Review')"><span class="status-chip st-rev">Review</span></div>
+  <div class="dropdown-item" onclick="pickStatus('Done')"><span class="status-chip st-done">Done</span></div>
+  <div class="dropdown-item" onclick="pickStatus('Blocked')"><span class="status-chip st-blk">Blocked</span></div>
+  <div class="dropdown-sep"></div>
+  <div class="dropdown-item" onclick="pickStatus('')"><span style="color:var(--text3);font-size:12px">Clear</span></div>
+</div>
+
+<!-- ADD COLUMN MODAL -->
+<div class="modal-wrap" id="add-col-modal" onclick="if(event.target===this)closeAddColModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3><i class="ti ti-columns-3" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Add column</h3>
+    <div><label>Column name</label><input id="new-col-name" placeholder="e.g. Phase, Owner, Budget…" maxlength="40"></div>
+    <div>
+      <label style="margin-bottom:6px;display:block">Column type</label>
+      <div class="col-type-grid" id="col-type-grid">
+        <div class="col-type-opt selected" data-type="text" onclick="selectColType(this)"><i class="ti ti-text-size"></i> Text</div>
+        <div class="col-type-opt" data-type="number" onclick="selectColType(this)"><i class="ti ti-hash"></i> Number</div>
+        <div class="col-type-opt" data-type="status" onclick="selectColType(this)"><i class="ti ti-circle-dot"></i> Status</div>
+        <div class="col-type-opt" data-type="date" onclick="selectColType(this)"><i class="ti ti-calendar"></i> Date</div>
+        <div class="col-type-opt" data-type="people" onclick="selectColType(this)"><i class="ti ti-users"></i> People</div>
+        <div class="col-type-opt" data-type="checkbox" onclick="selectColType(this)"><i class="ti ti-checkbox"></i> Checkbox</div>
+        <div class="col-type-opt" data-type="dropdown" onclick="selectColType(this)"><i class="ti ti-chevron-down"></i> Dropdown</div>
+        <div class="col-type-opt" data-type="url" onclick="selectColType(this)"><i class="ti ti-link"></i> URL</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="tb-btn" onclick="closeAddColModal()">Cancel</button>
+      <button class="tb-btn primary" onclick="confirmAddColumn()">Add column</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW SHEET MODAL -->
+<div class="modal-wrap" id="new-sheet-modal" onclick="if(event.target===this)closeNewSheetModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="width:340px">
+    <h3><i class="ti ti-table" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>New sheet</h3>
+    <div><label>Sheet name</label><input id="new-sheet-name" placeholder="e.g. Phase 1 schedule" maxlength="60"></div>
+    <div class="modal-actions">
+      <button class="tb-btn" onclick="closeNewSheetModal()">Cancel</button>
+      <button class="tb-btn primary" onclick="createSheet()">Create sheet</button>
+    </div>
+  </div>
+</div>
+
+<!-- PEOPLE MODAL -->
+<div class="modal-wrap" id="people-modal" onclick="if(event.target===this)closePeopleModal()">
+  <div class="people-modal-inner" onclick="event.stopPropagation()">
+    <div class="people-modal-header">
+      <h3><i class="ti ti-users" style="font-size:14px;vertical-align:-2px;margin-right:5px"></i>Assign people</h3>
+      <input class="people-search" id="people-search" placeholder="Search by name or email…" oninput="filterPeople()">
+    </div>
+    <div class="people-list" id="people-list"></div>
+    <div class="people-modal-footer">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Add new person</div>
+      <div class="add-person-row">
+        <input id="new-person-name" placeholder="Name" maxlength="40">
+        <input id="new-person-email" placeholder="Email" type="email" maxlength="80">
+        <button class="tb-btn primary" style="flex-shrink:0" onclick="addNewPerson()"><i class="ti ti-plus"></i></button>
+      </div>
+      <div id="notif-section" class="notif-row" style="display:none">
+        <strong id="notif-label">Notify selected people</strong>
+        <div class="notif-checkbox-row">
+          <input type="checkbox" id="notif-toggle" onchange="document.getElementById('notif-email-wrap').style.display=this.checked?'flex':'none'">
+          <label for="notif-toggle">Send email notification when assigned</label>
+        </div>
+        <div id="notif-email-wrap" style="display:none;flex-direction:column;gap:4px">
+          <input class="notif-email-input" id="notif-email" type="email" placeholder="Your email address">
+          <button class="tb-btn primary" style="width:100%;justify-content:center" onclick="sendNotification()"><i class="ti ti-send"></i> Send notification</button>
+        </div>
+        <div class="notif-sent" id="notif-sent"><i class="ti ti-check" style="font-size:13px"></i> Notification sent!</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:2px">
+        <button class="tb-btn" onclick="closePeopleModal()">Cancel</button>
+        <button class="tb-btn primary" onclick="confirmPeople()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-wrap" id="import-modal" onclick="if(event.target===this)closeImportModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3><i class="ti ti-upload" style="font-size:15px;vertical-align:-2px;margin-right:6px"></i>Import Smartsheet / CSV / Excel</h3>
+      <button class="icon-btn" onclick="closeImportModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);line-height:1.6">Drop a Smartsheet export (.xlsx, .csv), Excel file, or CSV. Column types are auto-detected. Assigned To → People, Comments → Comments column.</p>
+
+    <!-- Step 1: drop zone -->
+    <div id="import-step1">
+      <div class="import-drop" id="import-drop"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleImportDrop(event)"
+        onclick="document.getElementById('import-file-input').click()">
+        <i class="ti ti-file-import"></i>
+        Click or drag &amp; drop your file here<br>
+        <span style="font-size:11px;color:var(--text3);margin-top:4px;display:block">.xlsx · .csv · .xls</span>
+      </div>
+      <input type="file" id="import-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleImportFile(event)">
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+        <button class="tb-btn" onclick="loadImportSample()"><i class="ti ti-test-pipe"></i> Load sample data</button>
+        <button class="tb-btn" onclick="closeImportModal()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Step 2: processing -->
+    <div class="import-steps" id="import-step2">
+      <div id="imp-s1" class="import-step"><i class="ti ti-loader"></i> Reading file…</div>
+      <div id="imp-s2" class="import-step" style="opacity:.4"><i class="ti ti-wand"></i> Detecting column types…</div>
+      <div id="imp-s3" class="import-step" style="opacity:.4"><i class="ti ti-users"></i> Mapping contacts…</div>
+      <div id="imp-s4" class="import-step" style="opacity:.4"><i class="ti ti-check"></i> Building sheet…</div>
+      <div class="prog-wrap"><div class="prog-fill" id="imp-prog" style="width:0%"></div></div>
+    </div>
+
+    <!-- Step 3: column mapping -->
+    <div class="import-mapping" id="import-step3">
+      <p style="font-size:12px;color:var(--text2)">Map source columns to field types. Click <strong>Import</strong> when ready.</p>
+      <div id="mapping-rows"></div>
+      <div class="modal-actions">
+        <button class="tb-btn" onclick="closeImportModal()">Cancel</button>
+        <button class="tb-btn primary" onclick="confirmImport()"><i class="ti ti-check"></i> Import</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==============================
+   CONSTANTS & STATE
+   ============================== */
+const STATUS_CLS={Planning:'st-plan','In Progress':'st-prog',Done:'st-done',Blocked:'st-blk',Review:'st-rev'};
+const AV_COLORS=['#185FA5','#0F6E56','#534AB7','#993C1D','#3B6D11','#A32D2D','#854F0B','#72243E'];
+const TYPE_ICONS={text:'ti-text-size',number:'ti-hash',status:'ti-circle-dot',date:'ti-calendar',people:'ti-users',checkbox:'ti-checkbox',dropdown:'ti-chevron-down',url:'ti-link'};
+const TYPE_LABELS={number:'#',status:'S',date:'D',people:'P',checkbox:'✓',dropdown:'▾',url:'URL'};
+
+let PEOPLE=[];
+let columns=[{id:'name',label:'Name',type:'text',fixed:true}];
+let SHEETS={sheet1:{title:'',rows:[]}};
+let sidebarData=[{key:'sec1',type:'section',label:'Section'},{key:'sheet1',type:'sheet',label:'Sheet 1',sectionKey:'sec1',active:true}];
+let activeSheet='sheet1';
+let panelRowId=null,activeTab='attach';
+const collapsedSections=new Set();
+let statusDropTarget=null;
+let peopleModalRowId=null,peopleModalColId=null,selectedPeopleIds=[];
+let selectedColType='text';
+let importParsedData=null; // {headers, rows}
+
+/* ==============================
+   HELPERS
+   ============================== */
+function personColor(i){return AV_COLORS[i%AV_COLORS.length];}
+function personInitials(n){return n.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+function uid(){return 'c'+Date.now()+Math.random().toString(36).slice(2,6);}
+
+/* 12 default columns */
+const DEFAULT_COLS=[
+  {label:'Name',type:'text',fixed:true},
+  {label:'Description',type:'text'},{label:'Status',type:'status'},
+  {label:'Priority',type:'dropdown'},{label:'Assigned To',type:'people'},
+  {label:'Start Date',type:'date'},{label:'Due Date',type:'date'},
+  {label:'% Complete',type:'number'},{label:'Phase',type:'text'},
+  {label:'Budget',type:'number'},{label:'Notes',type:'text'},
+  {label:'Done',type:'checkbox'},
+];
+
+function initDefaultColumns(){
+  columns=[{id:'name',label:'Name',type:'text',fixed:true}];
+  DEFAULT_COLS.slice(1).forEach(c=>columns.push({id:uid(),label:c.label,type:c.type,fixed:false}));
+}
+
+function makeRow(id){
+  const r={id,section:false,attachments:[],comments:[],name:''};
+  columns.filter(c=>!c.fixed).forEach(c=>{ r[c.id]=c.type==='checkbox'?false:''; });
+  return r;
+}
+
+function makeDefaultRows(){
+  const rows=[{id:1,section:true,label:'Section 1',attachments:[],comments:[]}];
+  for(let i=2;i<=51;i++) rows.push(makeRow(i));
+  return rows;
+}
+
+/* init columns then sheets */
+initDefaultColumns();
+SHEETS.sheet1.rows=makeDefaultRows();
+
+/* ==============================
+   SIDEBAR
+   ============================== */
+function renderSidebar(){
+  const body=document.getElementById('sb-body');
+  body.innerHTML='';
+  sidebarData.filter(d=>d.type==='section').forEach(sec=>{
+    const wrap=document.createElement('div');
+    wrap.className='sb-section-wrap';
+    wrap.innerHTML=`<div class="sb-section-label-row">
+      <span class="sb-section-label" contenteditable="true" spellcheck="false" data-placeholder="Section name…"
+        onblur="renameSidebarSection('${sec.key}',this)">${sec.label}</span>
+      <button class="sb-section-add" onclick="addSheetToSection('${sec.key}')"><i class="ti ti-plus"></i></button>
+    </div>`;
+    body.appendChild(wrap);
+    sidebarData.filter(d=>d.type==='sheet'&&d.sectionKey===sec.key).forEach(item=>renderSidebarItem(item,body,true));
+  });
+  sidebarData.filter(d=>d.type==='sheet'&&!d.sectionKey).forEach(item=>renderSidebarItem(item,body,false));
+}
+function renderSidebarItem(item,container,indent){
+  const div=document.createElement('div');
+  div.className='sb-item'+(indent?' sb-indent':'')+(item.active?' active':'');
+  div.dataset.key=item.key;
+  div.innerHTML=`<i class="ti ti-table"></i>
+    <span class="sb-item-label" contenteditable="true" spellcheck="false"
+      onblur="renameSidebarItem('${item.key}',this)"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${item.label}</span>
+    <button class="sb-item-del" onclick="deleteSidebarItem(event,'${item.key}')"><i class="ti ti-x"></i></button>`;
+  div.addEventListener('click',e=>{
+    if(e.target.closest('[contenteditable]')||e.target.closest('.sb-item-del'))return;
+    activateSheet(item.key,div);
+  });
+  container.appendChild(div);
+}
+function activateSheet(key,el){
+  if(!SHEETS[key]) SHEETS[key]={title:sidebarData.find(d=>d.key===key)?.label||'',rows:makeDefaultRows()};
+  sidebarData.forEach(d=>d.active=(d.key===key));
+  document.querySelectorAll('.sb-item').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  activeSheet=key;
+  document.getElementById('sheet-title').textContent=SHEETS[key].title;
+  closePanel(); collapsedSections.clear(); renderColHeader(); renderGrid();
+}
+function renameSidebarSection(key,el){const s=sidebarData.find(d=>d.key===key);if(s)s.label=el.textContent.trim()||'Section';}
+function renameSidebarItem(key,el){
+  const d=sidebarData.find(x=>x.key===key);if(d)d.label=el.textContent.trim()||'Sheet';
+  if(activeSheet===key&&SHEETS[key]){SHEETS[key].title=d.label;document.getElementById('sheet-title').textContent=d.label;}
+}
+function deleteSidebarItem(e,key){
+  e.stopPropagation();if(!confirm('Delete this sheet?'))return;
+  sidebarData=sidebarData.filter(d=>d.key!==key);delete SHEETS[key];
+  if(activeSheet===key){const f=sidebarData.find(d=>d.type==='sheet');if(f){f.active=true;activeSheet=f.key;}}
+  renderSidebar();renderColHeader();renderGrid();
+}
+function addSidebarSection(){
+  const key='sec_'+Date.now();
+  sidebarData.push({key,type:'section',label:'New section'});
+  renderSidebar();
+  setTimeout(()=>{const ls=document.querySelectorAll('.sb-section-label');const l=ls[ls.length-1];if(l){l.focus();document.execCommand('selectAll');}},50);
+}
+function addSheetToSection(secKey){
+  const sk='sheet_'+Date.now();
+  sidebarData.push({key:sk,type:'sheet',label:'New sheet',sectionKey:secKey,active:false});
+  SHEETS[sk]={title:'New sheet',rows:makeDefaultRows()};
+  renderSidebar();
+  const el=document.querySelector(`.sb-item[data-key="${sk}"]`);
+  if(el){activateSheet(sk,el);setTimeout(()=>{const lbl=el.querySelector('.sb-item-label');if(lbl){lbl.focus();document.execCommand('selectAll');}},60);}
+}
+function openNewSheet(){document.getElementById('new-sheet-modal').classList.add('open');setTimeout(()=>document.getElementById('new-sheet-name').focus(),50);}
+function closeNewSheetModal(){document.getElementById('new-sheet-modal').classList.remove('open');}
+function createSheet(){
+  const name=document.getElementById('new-sheet-name').value.trim()||'New sheet';
+  const key='sheet_'+Date.now();
+  sidebarData.push({key,type:'sheet',label:name,active:false});
+  SHEETS[key]={title:name,rows:makeDefaultRows()};
+  document.getElementById('new-sheet-name').value='';
+  closeNewSheetModal();renderSidebar();
+  const el=document.querySelector(`.sb-item[data-key="${key}"]`);
+  if(el)activateSheet(key,el);
+}
+
+/* ==============================
+   COLUMN HEADER
+   ============================== */
+function renderColHeader(){
+  const tr=document.getElementById('col-header-row');
+  tr.innerHTML='';
+  // fixed
+  th(tr,'th-row','');
+  const ih=document.createElement('th');ih.className='th-icons';ih.innerHTML='<i class="ti ti-paperclip"></i><i class="ti ti-message-circle-2"></i>';tr.appendChild(ih);
+  const nh=document.createElement('th');nh.className='th-name';
+  nh.innerHTML=`<i class="ti ti-layout-rows th-icon"></i><span class="th-label" contenteditable="true" spellcheck="false" data-col="name">Name</span>`;
+  tr.appendChild(nh);
+  // dynamic
+  columns.filter(c=>!c.fixed).forEach(col=>{
+    const h=document.createElement('th');h.className='th-data';h.dataset.colid=col.id;
+    const badge=col.type!=='text'?`<span class="th-badge">${TYPE_LABELS[col.type]||col.type}</span>`:'';
+    h.innerHTML=`<i class="ti ${TYPE_ICONS[col.type]||'ti-text-size'} th-icon"></i><span class="th-label" contenteditable="true" spellcheck="false" data-col="${col.id}" onblur="renameColumn('${col.id}',this)">${col.label}</span>${badge}<button class="th-del" onclick="deleteColumn('${col.id}')" title="Delete column"><i class="ti ti-x"></i></button>`;
+    tr.appendChild(h);
+  });
+  // add col
+  const ah=document.createElement('th');ah.className='th-add';ah.title='Add column';ah.innerHTML='<i class="ti ti-plus"></i>';ah.onclick=openAddColModal;tr.appendChild(ah);
+}
+function th(parent,cls,html){const h=document.createElement('th');h.className=cls;h.innerHTML=html;parent.appendChild(h);return h;}
+function renameColumn(id,el){const c=columns.find(x=>x.id===id);if(c)c.label=el.textContent.trim()||'Column';}
+function deleteColumn(id){
+  if(!confirm('Delete this column?'))return;
+  columns=columns.filter(c=>c.id!==id);
+  Object.values(SHEETS).forEach(s=>s.rows.forEach(r=>{if(!r.section)delete r[id];}));
+  renderColHeader();renderGrid();
+}
+function openAddColModal(){
+  selectedColType='text';
+  document.querySelectorAll('.col-type-opt').forEach(o=>o.classList.toggle('selected',o.dataset.type==='text'));
+  document.getElementById('new-col-name').value='';
+  document.getElementById('add-col-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('new-col-name').focus(),50);
+}
+function closeAddColModal(){document.getElementById('add-col-modal').classList.remove('open');}
+function selectColType(el){selectedColType=el.dataset.type;document.querySelectorAll('.col-type-opt').forEach(o=>o.classList.toggle('selected',o===el));}
+function confirmAddColumn(){
+  const name=document.getElementById('new-col-name').value.trim()||'Column';
+  const id=uid();
+  columns.push({id,label:name,type:selectedColType,fixed:false});
+  Object.values(SHEETS).forEach(s=>s.rows.forEach(r=>{if(!r.section)r[id]=selectedColType==='checkbox'?false:'';}));
+  closeAddColModal();renderColHeader();renderGrid();
+}
+
+/* ==============================
+   GRID RENDER
+   ============================== */
+function getSheet(){return SHEETS[activeSheet]||Object.values(SHEETS)[0];}
+function getRow(id){return getSheet().rows.find(r=>r.id===id);}
+
+function cellTd(r,col){
+  const td=document.createElement('td');td.className='td-cell';
+  const val=r[col.id];
+  if(col.type==='status'){
+    const sc=STATUS_CLS[val]||'';
+    td.innerHTML=val?`<span class="status-chip ${sc}" onclick="openStatusDropdown(event,${r.id},'${col.id}')">${val}</span>`:`<span style="color:var(--text3);font-size:11px;cursor:pointer;padding:3px 6px" onclick="openStatusDropdown(event,${r.id},'${col.id}')">Set status</span>`;
+  } else if(col.type==='people'){
+    const ids=Array.isArray(val)?val:[];
+    const tags=ids.map(pid=>{const p=PEOPLE.find(x=>x.id===pid);if(!p)return '';return `<span class="person-tag"><span class="person-av" style="background:${p.color}">${personInitials(p.name)}</span>${p.name}<button class="person-tag-del" onclick="event.stopPropagation();removePerson(${r.id},'${col.id}',${pid})"><i class="ti ti-x" style="font-size:10px"></i></button></span>`;}).join('');
+    td.innerHTML=`<div class="people-cell" onclick="openPeopleModal(${r.id},'${col.id}')">${tags}<button class="people-add-btn"><i class="ti ti-plus" style="font-size:11px"></i></button></div>`;
+    td.style.padding='0';
+  } else if(col.type==='checkbox'){
+    td.style.textAlign='center';
+    td.innerHTML=`<input type="checkbox" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer" ${val?'checked':''} onchange="setCellVal(${r.id},'${col.id}',this.checked)">`;
+  } else if(col.type==='date'){
+    td.style.padding='3px 8px';
+    td.innerHTML=`<input type="date" style="font-size:11px;border:none;background:transparent;color:var(--text);font-family:var(--font);width:100%;outline:none;cursor:pointer" value="${val||''}" onchange="setCellVal(${r.id},'${col.id}',this.value)">`;
+  } else {
+    td.contentEditable='true';td.spellcheck=false;
+    td.textContent=val||'';
+    if(col.type==='number')td.style.fontFamily='var(--mono)';
+    td.addEventListener('blur',()=>setCellVal(r.id,col.id,td.innerText.trim()));
+  }
+  return td;
+}
+
+function renderGrid(){
+  const sheet=getSheet();
+  document.getElementById('sheet-title').textContent=sheet.title;
+  const tb=document.getElementById('grid-body');tb.innerHTML='';
+  const dynCols=columns.filter(c=>!c.fixed);
+  let rowNum=0;
+  let lastSectionId=null;
+
+  sheet.rows.forEach(r=>{
+    if(r.section){
+      lastSectionId=r.id;
+      const tr=document.createElement('tr');tr.className='section-row';
+      const isC=collapsedSections.has(r.id);
+      const span=2+dynCols.length+2;
+      tr.innerHTML=`<td class="td-row"></td><td class="td-icons"></td><td colspan="${span}" style="padding:0">
+        <button class="expand-btn" onclick="toggleSection(${r.id})">
+          <i class="ti ti-chevron-${isC?'right':'down'}"></i>
+          <span class="section-label-edit" contenteditable="true" spellcheck="false"
+            onblur="saveSectionLabel(${r.id},this)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${r.label||'Section'}</span>
+        </button>
+      </td>`;
+      tb.appendChild(tr);
+    } else {
+      if(lastSectionId&&collapsedSections.has(lastSectionId))return;
+      rowNum++;
+      const tr=document.createElement('tr');tr.dataset.id=r.id;
+      // row num
+      const tdRow=document.createElement('td');tdRow.className='td-row';tdRow.textContent=rowNum;tr.appendChild(tdRow);
+      // icons
+      const aCnt=r.attachments.length,cCnt=r.comments.length;
+      const tdIcons=document.createElement('td');tdIcons.className='td-icons';
+      tdIcons.innerHTML=`<button class="icon-btn" onclick="openPanel(${r.id},'attach')" title="${aCnt} attachment${aCnt!==1?'s':''}" aria-label="Attachments"><i class="ti ti-paperclip"></i>${aCnt?`<span class="badge">${aCnt}</span>`:''}</button><button class="icon-btn" onclick="openPanel(${r.id},'comment')" title="${cCnt} comment${cCnt!==1?'s':''}" aria-label="Comments"><i class="ti ti-message-circle-2"></i>${cCnt?`<span class="badge">${cCnt}</span>`:''}</button>`;
+      tr.appendChild(tdIcons);
+      // name
+      const tdName=document.createElement('td');tdName.className='td-name';tdName.contentEditable='true';tdName.spellcheck=false;tdName.textContent=r.name||'';
+      tdName.addEventListener('blur',()=>setCellVal(r.id,'name',tdName.innerText.trim()));
+      tr.appendChild(tdName);
+      // dynamic cols
+      dynCols.forEach(col=>tr.appendChild(cellTd(r,col)));
+      // spacer
+      const tdSp=document.createElement('td');tdSp.className='td-add-spacer';tr.appendChild(tdSp);
+      tb.appendChild(tr);
+    }
+  });
+}
+
+function setCellVal(id,field,val){const r=getRow(id);if(r)r[field]=val;}
+function saveSectionLabel(id,el){const r=getRow(id);if(r)r.label=el.innerText.trim()||'Section';}
+function toggleSection(id){if(collapsedSections.has(id))collapsedSections.delete(id);else collapsedSections.add(id);renderGrid();}
+function addRow(){
+  const sheet=getSheet();
+  const newId=Math.max(0,...sheet.rows.map(r=>r.id))+1;
+  sheet.rows.push(makeRow(newId));
+  renderGrid();
+  setTimeout(()=>{const rows=document.querySelectorAll('#grid-body tr:not(.section-row)');if(rows.length)rows[rows.length-1].scrollIntoView({behavior:'smooth',block:'center'});},60);
+}
+
+/* ==============================
+   STATUS DROPDOWN
+   ============================== */
+function openStatusDropdown(e,rowId,colId){
+  e.stopPropagation();
+  statusDropTarget={rowId,colId};
+  const dd=document.getElementById('status-dropdown');
+  dd.classList.remove('hidden');
+  dd.style.top=e.clientY+'px';dd.style.left=e.clientX+'px';
+  setTimeout(()=>document.addEventListener('click',closeStatusDd,{once:true}),10);
+}
+function closeStatusDd(){document.getElementById('status-dropdown').classList.add('hidden');statusDropTarget=null;}
+function pickStatus(val){if(statusDropTarget){setCellVal(statusDropTarget.rowId,statusDropTarget.colId,val);renderGrid();}closeStatusDd();}
+
+/* ==============================
+   PEOPLE PICKER
+   ============================== */
+function openPeopleModal(rowId,colId){
+  peopleModalRowId=rowId;peopleModalColId=colId;
+  const r=getRow(rowId);
+  selectedPeopleIds=Array.isArray(r[colId])?[...r[colId]]:[];
+  document.getElementById('people-search').value='';
+  document.getElementById('new-person-name').value='';
+  document.getElementById('new-person-email').value='';
+  document.getElementById('notif-toggle').checked=false;
+  document.getElementById('notif-email-wrap').style.display='none';
+  document.getElementById('notif-sent').style.display='none';
+  updateNotifSection();filterPeople();
+  document.getElementById('people-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('people-search').focus(),50);
+}
+function closePeopleModal(){document.getElementById('people-modal').classList.remove('open');}
+function filterPeople(){
+  const q=document.getElementById('people-search').value.toLowerCase();
+  const list=document.getElementById('people-list');list.innerHTML='';
+  const filtered=q?PEOPLE.filter(p=>p.name.toLowerCase().includes(q)||p.email.toLowerCase().includes(q)):PEOPLE;
+  if(!filtered.length){list.innerHTML='<div style="padding:12px 16px;font-size:12px;color:var(--text3)">No people yet. Add one below.</div>';return;}
+  filtered.forEach(p=>{
+    const sel=selectedPeopleIds.includes(p.id);
+    const row=document.createElement('div');row.className='person-row'+(sel?' selected':'');
+    row.innerHTML=`<span style="width:28px;height:28px;border-radius:50%;background:${p.color};display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0">${personInitials(p.name)}</span>
+      <div style="flex:1;min-width:0"><div class="person-name">${p.name}</div>${p.email?`<div class="person-email">${p.email}</div>`:''}</div>
+      ${sel?'<i class="ti ti-check person-check"></i>':''}`;
+    row.onclick=()=>{togglePersonSelect(p.id);};
+    list.appendChild(row);
+  });
+}
+function togglePersonSelect(pid){
+  if(selectedPeopleIds.includes(pid))selectedPeopleIds=selectedPeopleIds.filter(x=>x!==pid);
+  else selectedPeopleIds.push(pid);
+  updateNotifSection();filterPeople();
+}
+function updateNotifSection(){
+  const ns=document.getElementById('notif-section');
+  const sel=PEOPLE.filter(p=>selectedPeopleIds.includes(p.id)&&p.email);
+  if(sel.length){ns.style.display='flex';document.getElementById('notif-label').textContent=`Notify ${sel.length} assigned person${sel.length!==1?'s':''}`;}
+  else ns.style.display='none';
+}
+function sendNotification(){
+  const fromEmail=document.getElementById('notif-email').value.trim();
+  const sel=PEOPLE.filter(p=>selectedPeopleIds.includes(p.id)&&p.email);
+  if(!sel.length){alert('No selected people with email addresses.');return;}
+  if(!fromEmail){alert('Please enter your email address.');return;}
+  const sheetTitle=getSheet().title||'your sheet';
+  const row=getRow(peopleModalRowId);
+  const rowName=row?.name||`Row ${peopleModalRowId}`;
+  const subject=encodeURIComponent(`You've been assigned: ${rowName}`);
+  const body=encodeURIComponent(`Hi,\n\nYou have been assigned to "${rowName}" on the project sheet "${sheetTitle}".\n\nPlease log in to review your tasks.\n\n— Sent via Project Manager`);
+  window.location.href=`mailto:${sel.map(p=>p.email).join(',')}?subject=${subject}&body=${body}`;
+  document.getElementById('notif-sent').style.display='flex';
+  setTimeout(()=>document.getElementById('notif-sent').style.display='none',4000);
+}
+function addNewPerson(){
+  const name=document.getElementById('new-person-name').value.trim();
+  if(!name){alert('Please enter a name.');return;}
+  const email=document.getElementById('new-person-email').value.trim();
+  const id=Date.now();
+  PEOPLE.push({id,name,email,color:personColor(PEOPLE.length)});
+  document.getElementById('new-person-name').value='';
+  document.getElementById('new-person-email').value='';
+  selectedPeopleIds.push(id);
+  updateNotifSection();filterPeople();
+}
+function confirmPeople(){
+  if(peopleModalRowId!==null&&peopleModalColId!==null)setCellVal(peopleModalRowId,peopleModalColId,[...selectedPeopleIds]);
+  closePeopleModal();renderGrid();
+}
+function removePerson(rowId,colId,pid){
+  const r=getRow(rowId);if(!r)return;
+  if(Array.isArray(r[colId]))r[colId]=r[colId].filter(x=>x!==pid);
+  renderGrid();
+}
+
+/* ==============================
+   IMPORT
+   ============================== */
+function openImportModal(){
+  // reset
+  document.getElementById('import-step1').style.display='block';
+  document.getElementById('import-step2').style.display='none';
+  document.getElementById('import-step3').style.display='none';
+  document.getElementById('import-drop').classList.remove('drag-over');
+  document.getElementById('import-modal').classList.add('open');
+}
+function closeImportModal(){document.getElementById('import-modal').classList.remove('open');}
+
+function handleImportDrop(e){
+  e.preventDefault();
+  document.getElementById('import-drop').classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(file)processImportFile(file);
+}
+function handleImportFile(e){
+  const file=e.target.files[0];if(file)processImportFile(file);
+  e.target.value='';
+}
+
+function processImportFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(!['csv','xlsx','xls'].includes(ext)){alert('Please upload a .csv or .xlsx file.');return;}
+  document.getElementById('import-step1').style.display='none';
+  document.getElementById('import-step2').style.display='flex';
+  runImportSteps(()=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      if(ext==='csv'){
+        importParsedData=parseCSV(ev.target.result);
+      } else {
+        // xlsx: use SheetJS if available, else treat as CSV attempt
+        if(window.XLSX){
+          const wb=XLSX.read(ev.target.result,{type:'array'});
+          const ws=wb.Sheets[wb.SheetNames[0]];
+          const arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+          const headers=(arr[0]||[]).map(h=>String(h).trim());
+          const rows=arr.slice(1).map(row=>{ const o={};headers.forEach((h,i)=>o[h]=String(row[i]||'').trim());return o;});
+          importParsedData={headers,rows};
+        } else {
+          // fallback: read as text CSV
+          importParsedData=parseCSV(ev.target.result);
+        }
+      }
+      showMappingStep();
+    };
+    if(ext==='csv') reader.readAsText(file);
+    else reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(!lines.length)return{headers:[],rows:[]};
+  function splitCSVLine(line){
+    const res=[];let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+      else if(c===','&&!inQ){res.push(cur.trim());cur='';}
+      else cur+=c;
+    }
+    res.push(cur.trim());return res;
+  }
+  const headers=splitCSVLine(lines[0]).map(h=>h.replace(/^"|"$/g,'').trim());
+  const rows=lines.slice(1).map(line=>{
+    const vals=splitCSVLine(line);
+    const o={};headers.forEach((h,i)=>o[h]=(vals[i]||'').replace(/^"|"$/g,'').trim());
+    return o;
+  });
+  return{headers,rows};
+}
+
+function runImportSteps(onDone){
+  const steps=['imp-s1','imp-s2','imp-s3','imp-s4'];
+  const pcts=[20,50,75,100];
+  let s=0;
+  function next(){
+    if(s>=steps.length){onDone();return;}
+    document.getElementById(steps[s]).classList.add('done');
+    document.getElementById(steps[s]).style.opacity='1';
+    const icon=document.getElementById(steps[s]).querySelector('i');
+    if(icon)icon.className='ti ti-check';
+    document.getElementById('imp-prog').style.width=pcts[s]+'%';
+    if(s+1<steps.length)document.getElementById(steps[s+1]).style.opacity='1';
+    s++;setTimeout(next,500);
+  }
+  next();
+}
+
+/* detect column type from header name */
+function detectColType(header){
+  const h=header.toLowerCase();
+  if(/assign|owner|contact|person|people|who/i.test(h))return'people';
+  if(/status|state|stage/i.test(h))return'status';
+  if(/date|due|start|end|deadline|finish/i.test(h))return'date';
+  if(/comment|note|description|detail/i.test(h))return'text';
+  if(/priority|prio/i.test(h))return'dropdown';
+  if(/done|complete|finished|check/i.test(h))return'checkbox';
+  if(/budget|cost|amount|price|number|count|qty|quantity|percent|%/i.test(h))return'number';
+  if(/url|link|href|website/i.test(h))return'url';
+  return'text';
+}
+
+function showMappingStep(){
+  if(!importParsedData||!importParsedData.headers.length){alert('Could not parse file. Try a CSV.');closeImportModal();return;}
+  document.getElementById('import-step2').style.display='none';
+  document.getElementById('import-step3').style.display='flex';
+  const container=document.getElementById('mapping-rows');
+  container.innerHTML='';
+  importParsedData.headers.forEach(h=>{
+    const detected=detectColType(h);
+    const row=document.createElement('div');row.className='mapping-row';
+    row.innerHTML=`<span class="src" title="${h}">${h}</span>
+      <i class="ti ti-arrow-right mapping-arrow"></i>
+      <select data-src="${h}">
+        <option value="skip">— skip —</option>
+        <option value="name" ${h.toLowerCase()==='name'||h.toLowerCase()==='title'||h.toLowerCase()==='task'?'selected':''}>Name (primary)</option>
+        ${['text','number','status','date','people','checkbox','dropdown','url'].map(t=>`<option value="${t}" ${detected===t&&h.toLowerCase()!=='name'?'selected':''}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('')}
+      </select>`;
+    container.appendChild(row);
+  });
+}
+
+function confirmImport(){
+  if(!importParsedData)return;
+  // build new columns from mapping
+  const newCols=[];
+  let nameHeader=null;
+  document.querySelectorAll('#mapping-rows select').forEach(sel=>{
+    const src=sel.dataset.src;const type=sel.value;
+    if(type==='skip')return;
+    if(type==='name'){nameHeader=src;return;}
+    newCols.push({id:uid(),label:src,type,fixed:false});
+  });
+
+  // reset columns
+  columns=[{id:'name',label:'Name',type:'text',fixed:true},...newCols];
+
+  // build rows
+  const sheetRows=[{id:1,section:true,label:'Imported Data',attachments:[],comments:[]}];
+  importParsedData.rows.forEach((srcRow,i)=>{
+    const r=makeRow(i+2);
+    r.name=nameHeader?srcRow[nameHeader]||'':'';
+    newCols.forEach(col=>{
+      const val=srcRow[col.label]||'';
+      if(col.type==='people'&&val){
+        // create person if not exists
+        let p=PEOPLE.find(x=>x.name.toLowerCase()===val.toLowerCase());
+        if(!p){p={id:Date.now()+i,name:val,email:'',color:personColor(PEOPLE.length)};PEOPLE.push(p);}
+        r[col.id]=[p.id];
+      } else if(col.type==='checkbox'){
+        r[col.id]=/true|yes|1|done|x/i.test(val);
+      } else if(col.type==='status'){
+        const match=Object.keys(STATUS_CLS).find(k=>k.toLowerCase()===val.toLowerCase())||'';
+        r[col.id]=match||val;
+      } else {
+        r[col.id]=val;
+      }
+    });
+    sheetRows.push(r);
+  });
+
+  // create new sheet
+  const key='sheet_'+Date.now();
+  const sheetName='Imported sheet';
+  sidebarData.push({key,type:'sheet',label:sheetName,active:false});
+  SHEETS[key]={title:sheetName,rows:sheetRows};
+  closeImportModal();
+  renderSidebar();
+  const el=document.querySelector(`.sb-item[data-key="${key}"]`);
+  if(el)activateSheet(key,el);
+}
+
+function loadImportSample(){
+  // Simulate a Smartsheet CSV import
+  importParsedData={
+    headers:['Task Name','Description','Status','Priority','Assigned To','Start Date','Due Date','% Complete','Notes'],
+    rows:[
+      {'Task Name':'Foundation work','Description':'Excavate and pour foundation','Status':'Done','Priority':'High','Assigned To':'J. Martinez','Start Date':'2026-04-01','Due Date':'2026-04-20','% Complete':'100','Notes':'Completed ahead of schedule'},
+      {'Task Name':'Structural framing','Description':'Steel frame installation','Status':'In Progress','Priority':'High','Assigned To':'T. Nguyen','Start Date':'2026-04-21','Due Date':'2026-05-15','% Complete':'65','Notes':'Crane scheduled for next week'},
+      {'Task Name':'Electrical rough-in','Description':'First fix electrical work','Status':'Planning','Priority':'Med','Assigned To':'R. Chen','Start Date':'2026-05-16','Due Date':'2026-06-01','% Complete':'0','Notes':'Awaiting permits'},
+      {'Task Name':'Plumbing rough-in','Description':'First fix plumbing','Status':'Planning','Priority':'Med','Assigned To':'S. Park','Start Date':'2026-05-20','Due Date':'2026-06-05','% Complete':'0','Notes':''},
+      {'Task Name':'Insulation','Description':'Wall and roof insulation','Status':'Planning','Priority':'Low','Assigned To':'M. Torres','Start Date':'2026-06-06','Due Date':'2026-06-15','% Complete':'0','Notes':''},
+      {'Task Name':'Drywall','Description':'Hang and tape drywall','Status':'Planning','Priority':'Low','Assigned To':'J. Martinez','Start Date':'2026-06-16','Due Date':'2026-07-01','% Complete':'0','Notes':''},
+      {'Task Name':'HVAC installation','Description':'Duct work and units','Status':'Blocked','Priority':'High','Assigned To':'T. Nguyen','Start Date':'2026-05-01','Due Date':'2026-06-30','% Complete':'10','Notes':'Waiting on equipment delivery — 6 week lead time'},
+      {'Task Name':'Final inspections','Description':'City and owner inspections','Status':'Planning','Priority':'High','Assigned To':'R. Chen','Start Date':'2026-07-15','Due Date':'2026-07-30','% Complete':'0','Notes':'Schedule with inspector 2 weeks ahead'},
+    ]
+  };
+  document.getElementById('import-step1').style.display='none';
+  document.getElementById('import-step2').style.display='flex';
+  runImportSteps(()=>showMappingStep());
+}
+
+/* ==============================
+   SIDE PANEL
+   ============================== */
+function openPanel(rowId,tab){
+  panelRowId=rowId;activeTab=tab||'attach';
+  const row=getRow(rowId);if(!row)return;
+  document.getElementById('panel-title').textContent=row.name||'(no name)';
+  document.getElementById('panel-overlay').classList.add('open');
+  renderPanelTab();
+}
+function renderPanelTab(){
+  ['attach','comment','detail'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===activeTab));
+  const row=getRow(panelRowId);const body=document.getElementById('panel-body');const ciw=document.getElementById('comment-input-wrap');
+  if(!row)return;let html='';
+  if(activeTab==='attach'){
+    ciw.style.display='none';
+    html+=`<div class="panel-section"><h4>Attachments (${row.attachments.length})</h4>`;
+    if(!row.attachments.length)html+=`<p style="color:var(--text3);font-size:12px">No attachments yet.</p>`;
+    row.attachments.forEach(a=>{html+=`<div class="attach-item"><i class="ti ${a.icon}"></i><span class="attach-name">${a.name}</span><span class="attach-size">${a.size}</span><button class="icon-btn" style="flex-shrink:0"><i class="ti ti-download"></i></button></div>`;});
+    html+=`<button class="tb-btn" style="margin-top:6px;width:100%;justify-content:center" onclick="addAttachment(${panelRowId})"><i class="ti ti-plus"></i> Add attachment</button></div>`;
+  } else if(activeTab==='comment'){
+    ciw.style.display='flex';
+    html+=`<div class="panel-section"><h4>Comments (${row.comments.length})</h4>`;
+    if(!row.comments.length)html+=`<p style="color:var(--text3);font-size:12px">No comments yet.</p>`;
+    row.comments.forEach(c=>{html+=`<div class="comment-item"><div class="av ${c.cls}">${c.av}</div><div><div class="comment-text">${c.text}</div><div class="comment-meta">${c.author} &middot; ${c.time}</div></div></div>`;});
+    html+=`</div>`;
+  } else {
+    ciw.style.display='none';
+    html+=`<div class="panel-section"><h4>Row details</h4><div>`;
+    html+=dRow('Name',row.name||'—');
+    columns.filter(c=>!c.fixed).forEach(col=>{
+      let val=row[col.id];
+      if(col.type==='people'&&Array.isArray(val))val=val.map(pid=>{const p=PEOPLE.find(x=>x.id===pid);return p?p.name:pid;}).join(', ')||'—';
+      else if(col.type==='checkbox')val=val?'Yes':'No';
+      else if(col.type==='status'&&val)val=`<span class="status-chip ${STATUS_CLS[val]||''}">${val}</span>`;
+      else val=val||'—';
+      html+=dRow(col.label,val);
+    });
+    html+=dRow('Attachments',row.attachments.length);html+=dRow('Comments',row.comments.length);
+    html+=`</div></div>`;
+  }
+  body.innerHTML=html;
+}
+function dRow(l,v){return `<div class="detail-row"><span class="detail-label">${l}</span><span>${v}</span></div>`;}
+function switchTab(t){activeTab=t;renderPanelTab();}
+function closePanel(){document.getElementById('panel-overlay').classList.remove('open');panelRowId=null;}
+function closePanelBg(e){if(e.target===document.getElementById('panel-overlay'))closePanel();}
+function submitComment(){
+  const inp=document.getElementById('new-comment');const txt=inp.value.trim();
+  if(!txt||panelRowId===null)return;
+  const row=getRow(panelRowId);if(!row)return;
+  const now=new Date();const time=now.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  row.comments.push({av:'ME',cls:'av-b',author:'You',text:txt,time});
+  inp.value='';renderGrid();renderPanelTab();
+}
+function addAttachment(rowId){
+  const name=prompt('File name (e.g. Report.pdf):');if(!name)return;
+  const row=getRow(rowId);if(!row)return;
+  const ext=name.split('.').pop().toLowerCase();
+  const icon=ext==='pdf'?'ti-file-type-pdf':['xls','xlsx','csv'].includes(ext)?'ti-file-spreadsheet':'ti-file';
+  row.attachments.push({name,icon,size:'—'});
+  renderGrid();renderPanelTab();
+}
+
+/* ==============================
+   SHEET TITLE SYNC
+   ============================== */
+document.getElementById('sheet-title').addEventListener('blur',function(){
+  const sheet=getSheet();sheet.title=this.textContent.trim();
+  const active=sidebarData.find(d=>d.key===activeSheet);
+  if(active){active.label=sheet.title;const el=document.querySelector(`.sb-item[data-key="${activeSheet}"] .sb-item-label`);if(el)el.textContent=sheet.title;}
+});
+
+/* ==============================
+   SHEETJS for xlsx (optional, loaded async)
+   ============================== */
+(function(){
+  const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  s.async=true;document.head.appendChild(s);
+})();
+
+/* ==============================
+   INIT
+   ============================== */
+renderSidebar();renderColHeader();renderGrid();
+</script>
+</body>
+</html>
